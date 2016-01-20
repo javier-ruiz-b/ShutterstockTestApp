@@ -29,9 +29,14 @@ public class IOUtils {
     }
 
     //lazy load
-    public static File getImagesTempDir(Context context) {
+    public static File getImagesTempDir(Context context) throws IOException {
         if (mImagesTempDir == null) {
             mImagesTempDir = new File(getAppCacheDir(context), IMAGES_PATH);
+
+            //create if not created already
+            if (!mImagesTempDir.exists()) {
+                mImagesTempDir.mkdirs();
+            }
         }
         return mImagesTempDir;
     }

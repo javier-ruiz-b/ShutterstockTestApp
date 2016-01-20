@@ -12,7 +12,6 @@ public class ShutterstockServiceBuilder {
     public static ShutterstockService build() {
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(ShutterstockService.URL)
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 

@@ -7,10 +7,13 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 
+import com.squareup.picasso.Picasso;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
-import shutterstock.test.com.shutterstockapp.model.ImageFileFromUrl;
+import shutterstock.test.com.shutterstockapp.model.ImageFile;
 
 /**
  * Created by Javier on 19.01.2016.
@@ -19,19 +22,29 @@ public class ImageAdapter extends BaseAdapter {
     private String TAG = "ImageAdapter";
 
     private Context mContext;
-    private ArrayList<ImageFileFromUrl> mImages = new ArrayList<>();
+    private ArrayList<ImageFile> mImages = new ArrayList<>();
 
     public ImageAdapter(Context c) {
         mContext = c;
     }
 
-    public void addImages(ImageFileFromUrl[] images) {
+    public void addImages(ImageFile[] images) {
         mImages.addAll(Arrays.asList(images));
         notifyDataSetChanged();
     }
 
-    public void addImage(ImageFileFromUrl image) {
+    public void addImages(List<ImageFile> images) {
+        mImages.addAll(images);
+        notifyDataSetChanged();
+    }
+
+    public void addImage(ImageFile image) {
         mImages.add(image);
+        notifyDataSetChanged();
+    }
+
+    public void clear() {
+        mImages.clear();
         notifyDataSetChanged();
     }
 
@@ -53,19 +66,16 @@ public class ImageAdapter extends BaseAdapter {
         if (convertView == null) {
             // if it's not recycled, initialize some attributes
             imageView = new ImageView(mContext);
-            imageView.setLayoutParams(new GridView.LayoutParams(85, 85));
+            int size = ((GridView)parent).getColumnWidth();
+            imageView.setLayoutParams(new GridView.LayoutParams(size, size));
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            imageView.setPadding(8, 8, 8, 8);
+            imageView.setAdjustViewBounds(true);
         } else {
             imageView = (ImageView) convertView;
         }
 
-        ImageFileFromUrl image = mImages.get(position);
-//        try {
-//            Picasso.with(mContext).load(image.getSmallThumbnailUrl()).into(imageView);
-//        } catch (MalformedURLException e) {
-//            Log.e(ImageAdapter, )
-//        }
+        ImageFile image = mImages.get(position);
+        Picasso.with(mContext).load(image.getFile()).into(imageView);
 
         return imageView;
     }

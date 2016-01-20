@@ -3,6 +3,7 @@ package shutterstock.test.com.shutterstockapp.network.retrofit;
 import android.content.Context;
 import android.util.Base64;
 
+import retrofit2.Call;
 import rx.Observable;
 import shutterstock.test.com.shutterstockapp.R;
 import shutterstock.test.com.shutterstockapp.model.json.SearchResponse;
@@ -44,7 +45,7 @@ public class ShutterstockServiceClient {
      * @param query search string
      * @return
      */
-    public Observable<SearchResponse> searchImages(int page,
+    public Call<SearchResponse> searchImages(int page,
                                                    int resultsPerPage,
                                                    String query) {
         return mShutterstockService.searchImages(mAuthToken, page, resultsPerPage, query);
