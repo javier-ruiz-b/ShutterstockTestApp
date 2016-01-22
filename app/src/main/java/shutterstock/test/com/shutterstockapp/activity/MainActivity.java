@@ -1,4 +1,4 @@
-package shutterstock.test.com.shutterstockapp;
+package shutterstock.test.com.shutterstockapp.activity;
 
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
@@ -21,12 +21,14 @@ import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
+import shutterstock.test.com.shutterstockapp.R;
+import shutterstock.test.com.shutterstockapp.ShutterstockApp;
 import shutterstock.test.com.shutterstockapp.adapter.ImageAdapter;
 import shutterstock.test.com.shutterstockapp.model.ImageFile;
 import shutterstock.test.com.shutterstockapp.model.json.Datum;
 import shutterstock.test.com.shutterstockapp.model.json.SearchResponse;
-import shutterstock.test.com.shutterstockapp.network.file.FileDownloader;
-import shutterstock.test.com.shutterstockapp.network.retrofit.ShutterstockServiceClient;
+import shutterstock.test.com.shutterstockapp.module.network.file.FileDownloader;
+import shutterstock.test.com.shutterstockapp.module.network.shutterstock.ShutterstockClient;
 import shutterstock.test.com.shutterstockapp.util.LogHelper;
 
 public class MainActivity extends AppCompatActivity {
@@ -45,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageAdapter mGridViewAdapter;
 
     private PublishSubject<ImageFile> mShowImagesStream = PublishSubject.create();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         mLoadingMore = true;
-        ShutterstockServiceClient client = ShutterstockServiceClient.getInstance(getApplicationContext());
+        ShutterstockClient client = ((ShutterstockApp)getApplication()).getComponent().shutterstockClient();
         client.searchImages(mLastRequestedPage, IMAGES_PER_REQUEST, searchText).enqueue(new Callback<SearchResponse>() {
             @Override
             public void onResponse(Response<SearchResponse> response) {
@@ -150,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
                                     try {
                                         final ImageFile image =
                                                 new ImageFile(getApplicationContext(),
-                                                        datum.id, datum.assets.preview);
+                                                        datum, datum.assets.preview);
                                         downloadImageIfNecessaryAndAdd(image);
                                     } catch (IOException e) {
                                         LogHelper.logException(e);
@@ -178,22 +181,23 @@ public class MainActivity extends AppCompatActivity {
         } else {
             LogHelper.logEvent("Downloading " + imageFile.getFile().getName());
             //download
-            FileDownloader.getInstance().downloadFile(imageFile.getUrl(), imageFile.getFile(),
+            FileDownloader fileDownloader = ((ShutterstockApp)getApplication()).getComponent().fileDownloader();
+            fileDownloader.downloadFile(imageFile.getUrl(), imageFile.getFile(),
                     new FileDownloader.Listener() {
-                @Override
-                public void progressUpdate(long transferred, long total) {
-                }
+                        @Override
+                        public void progressUpdate(long transferred, long total) {
+                        }
 
-                @Override
-                public void onError(IOException e) {
-                    LogHelper.logException(e);
-                }
+                        @Override
+                        public void onError(IOException e) {
+                            LogHelper.logException(e);
+                        }
 
-                @Override
-                public void onSuccess() {
-                    mShowImagesStream.onNext(imageFile);
-                }
-            });
+                        @Override
+                        public void onSuccess() {
+                            mShowImagesStream.onNext(imageFile);
+                        }
+                    });
         }
     }
 

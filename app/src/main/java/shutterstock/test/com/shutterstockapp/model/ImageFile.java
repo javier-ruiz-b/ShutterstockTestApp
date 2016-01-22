@@ -7,9 +7,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import shutterstock.test.com.shutterstockapp.model.json.LargeThumb;
-import shutterstock.test.com.shutterstockapp.model.json.Preview;
-import shutterstock.test.com.shutterstockapp.model.json.SmallThumb;
+import shutterstock.test.com.shutterstockapp.model.json.Datum;
+import shutterstock.test.com.shutterstockapp.model.json.ImageData;
 import shutterstock.test.com.shutterstockapp.util.IOUtils;
 
 /**
@@ -19,30 +18,21 @@ public class ImageFile {
 
     private final static String IMAGE_FILE_SUFFIX = ".jpg";
 
+    private Datum mImageInfo;
     private File mFile;
     private URL mUrl;
 
-    public ImageFile(Context context, String id, Preview preview)
+    public ImageFile(Context context, Datum imageInfo, ImageData preview)
             throws IOException {
-        this(context, id, preview.width, preview.height, preview.url);
-    }
-
-    public ImageFile(Context context, String id, LargeThumb thumb)
-            throws IOException {
-        this(context, id, thumb.width, thumb.height, thumb.url);
-    }
-
-    public ImageFile(Context context, String id, SmallThumb thumb)
-            throws IOException {
-        this(context, id, thumb.width, thumb.height, thumb.url);
+        this(context, imageInfo, preview.width, preview.height, preview.url);
     }
 
     public ImageFile(Context context,
-                     String id,
+                     Datum mImageInfo,
                      Integer width,
                      Integer height,
                      String url) throws IOException {
-        String name = id + "_" + width.toString() + "x" + height.toString() + IMAGE_FILE_SUFFIX;
+        String name = mImageInfo.id + "_" + width.toString() + "x" + height.toString() + IMAGE_FILE_SUFFIX;
         File imagesFolder = IOUtils.getImagesTempDir(context);
         mFile = new File(imagesFolder, name);
         mUrl = new URL(url);
@@ -54,6 +44,10 @@ public class ImageFile {
 
     public URL getUrl() {
         return mUrl;
+    }
+
+    public Datum getImageInfo() {
+        return mImageInfo;
     }
 }
 

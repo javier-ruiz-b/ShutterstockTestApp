@@ -1,4 +1,4 @@
-package shutterstock.test.com.shutterstockapp.network.file;
+package shutterstock.test.com.shutterstockapp.module.network.file;
 
 import android.support.annotation.Nullable;
 
@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.net.URL;
 
 
+import javax.inject.Singleton;
+
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -18,36 +20,24 @@ import shutterstock.test.com.shutterstockapp.util.IOUtils;
 /**
  * Created by Javier on 20.01.2016.
  */
+@Singleton
 public class FileDownloader {
 
     private final static int BUFFER_SIZE = 2048;
 
-    public interface Listener {
-        /**
-         *
-         * @param transferred data transferred in bytes.
-         * @param total total size in bytes. May be -1 if the entity doesn't provide contentLength.
-         */
-        void progressUpdate(long transferred, long total);
-
-        void onError(IOException e);
-
-        void onSuccess();
-    }
-
     private OkHttpClient mClient;
 
-    private FileDownloader() {
+    public FileDownloader() {
         mClient = new OkHttpClient();
     }
 
-    private static FileDownloader mInstance = null;
-    public static FileDownloader getInstance() {
-        if (mInstance == null) {
-            mInstance = new FileDownloader();
-        }
-        return mInstance;
-    }
+//    private static FileDownloader mInstance = null;
+//    public static FileDownloader getInstance() {
+//        if (mInstance == null) {
+//            mInstance = new FileDownloader();
+//        }
+//        return mInstance;
+//    }
 
     public void downloadFile(URL url,
                              final File outFile,
@@ -101,4 +91,17 @@ public class FileDownloader {
         });
     }
 
+
+    public interface Listener {
+        /**
+         *
+         * @param transferred data transferred in bytes.
+         * @param total total size in bytes. May be -1 if the entity doesn't provide contentLength.
+         */
+        void progressUpdate(long transferred, long total);
+
+        void onError(IOException e);
+
+        void onSuccess();
+    }
 }
