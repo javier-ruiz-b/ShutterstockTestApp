@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.MenuItem;
 import android.support.v4.app.NavUtils;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.javierruiz.shutterstocktestapp.R;
 import com.javierruiz.shutterstocktestapp.model.ImageFile;
@@ -27,6 +28,7 @@ public class FullscreenImageActivity extends AppCompatActivity {
     private static final int AUTO_HIDE_DELAY_MILLIS = 3000;
 
     private ImageView mImageView;
+    private TextView mTextView;
 
     /**
      * Some older devices needs a small delay between UI widget updates
@@ -50,6 +52,8 @@ public class FullscreenImageActivity extends AppCompatActivity {
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+
+            mTextView.setVisibility(View.GONE);
         }
     };
 //    private View mControlsView;
@@ -57,11 +61,11 @@ public class FullscreenImageActivity extends AppCompatActivity {
         @Override
         public void run() {
             // Delayed display of UI elements
-            ActionBar actionBar = getSupportActionBar();
-            if (actionBar != null) {
-                actionBar.show();
-            }
-//            mControlsView.setVisibility(View.VISIBLE);
+//            ActionBar actionBar = getSupportActionBar();
+//            if (actionBar != null) {
+//                actionBar.show();
+//            }
+            mTextView.setVisibility(View.VISIBLE);
         }
     };
     private boolean mVisible;
@@ -99,8 +103,9 @@ public class FullscreenImageActivity extends AppCompatActivity {
         }
 
         mVisible = true;
-//        mControlsView = findViewById(R.id.fullscreen_content_controls);
+
         mImageView = (ImageView) findViewById(R.id.imageView);
+        mTextView = (TextView) findViewById(R.id.textView);
 
         //Load Image
         if (getIntent() == null) {
@@ -109,6 +114,10 @@ public class FullscreenImageActivity extends AppCompatActivity {
         }
         ImageFile imageFile = (ImageFile) getIntent().getSerializableExtra(KEY_PARAMETER_IMAGE_FILE);
         Picasso.with(this).load(imageFile.getFile()).into(mImageView);
+
+        if (imageFile.getImageInfo().description != null) {
+            mTextView.setText(imageFile.getImageInfo().description);
+        }
 
         // Set up the user interaction to manually show or hide the system UI.
         mImageView.setOnClickListener(new View.OnClickListener() {
@@ -141,11 +150,10 @@ public class FullscreenImageActivity extends AppCompatActivity {
 
     private void hide() {
         // Hide UI first
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.hide();
-        }
-//        mControlsView.setVisibility(View.GONE);
+//        ActionBar actionBar = getSupportActionBar();
+//        if (actionBar != null) {
+//            actionBar.hide();
+//        }
         mVisible = false;
 
         // Schedule a runnable to remove the status and navigation bar after a delay

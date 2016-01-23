@@ -2,21 +2,28 @@ package com.javierruiz.shutterstocktestapp.activity;
 
 import android.app.ActivityOptions;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.transition.Explode;
+import android.transition.Fade;
+import android.transition.TransitionInflater;
+import android.transition.TransitionManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.GridView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -52,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean mLoadingMore;
 
     //Views
+    private CoordinatorLayout mRootView;
     private GridView mGridView;
     private ProgressBar mProgressBar;
     private ImageAdapter mGridViewAdapter;
@@ -63,10 +71,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+//        setSupportActionBar(toolbar);
 
         FileDownloader fileDownloader = ((ShutterstockApp)getApplication()).getComponent().fileDownloader();
+
+        mRootView = (CoordinatorLayout) findViewById(R.id.rootView);
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         mProgressBar.setVisibility(View.GONE); // hidden by default
@@ -77,8 +87,6 @@ public class MainActivity extends AppCompatActivity {
                 if (!image.getFile().exists()) {
                     return; // do not load if not ready
                 }
-
-
                 Intent intent = new Intent(MainActivity.this, FullscreenImageActivity.class);
                 intent.putExtra(FullscreenImageActivity.KEY_PARAMETER_IMAGE_FILE, image);
 
@@ -103,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                final int loadBeforeItemsCount = IMAGES_PER_REQUEST  / 2; // scrolled more than the half
+                final int loadBeforeItemsCount = IMAGES_PER_REQUEST / 2; // scrolled more than the half
                 if (firstVisibleItem + visibleItemCount >= totalItemCount - loadBeforeItemsCount) {
                     // End has been reached
                     getNextImages(mSearchText);
@@ -132,6 +140,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                 });
+
     }
 
     private void searchImages(String searchText) {
