@@ -1,50 +1,31 @@
 package com.javierruiz.shutterstocktestapp.activity;
 
-import android.app.ActivityOptions;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
-import android.support.v7.widget.Toolbar;
-import android.transition.Explode;
-import android.transition.Fade;
-import android.transition.TransitionInflater;
-import android.transition.TransitionManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.GridView;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import java.io.IOException;
-import java.util.List;
-
-import retrofit2.Callback;
-import retrofit2.Response;
-import rx.Observable;
-import rx.Subscriber;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
-import rx.subjects.PublishSubject;
 import com.javierruiz.shutterstocktestapp.R;
 import com.javierruiz.shutterstocktestapp.ShutterstockApp;
 import com.javierruiz.shutterstocktestapp.adapter.ImageAdapter;
+import com.javierruiz.shutterstocktestapp.manager.ImageSearchManager;
 import com.javierruiz.shutterstocktestapp.model.ImageFile;
-import com.javierruiz.shutterstocktestapp.model.json.ImageInfo;
-import com.javierruiz.shutterstocktestapp.model.json.SearchResponse;
 import com.javierruiz.shutterstocktestapp.module.network.file.FileDownloader;
 import com.javierruiz.shutterstocktestapp.module.network.shutterstock.ShutterstockClient;
-import com.javierruiz.shutterstocktestapp.util.LogHelper;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,31 +33,23 @@ public class MainActivity extends AppCompatActivity {
     private final static int COLUMNS = 3;
     private final static int IMAGES_PER_REQUEST = COLUMNS * ROWS_PER_REQUEST;
 
-    //controls infinite load
-    private boolean mReachedEnd;
-    private int mLastRequestedPage;
-    private String mSearchText;
-    private boolean mLoadingMore;
+    private final static String KEY_IMAGE_FILES = "image_files";
+    private final static String KEY_SCROLL_X = "scroll_x";
 
     //Views
-    private CoordinatorLayout mRootView;
     private GridView mGridView;
     private ProgressBar mProgressBar;
     private ImageAdapter mGridViewAdapter;
 
-    private PublishSubject<ImageFile> mShowImagesStream = PublishSubject.create();
-
+    private ImageSearchManager mImageSearchManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
 
+        ShutterstockClient shutterstockClient = ((ShutterstockApp)getApplication()).getComponent().shutterstockClient();
         FileDownloader fileDownloader = ((ShutterstockApp)getApplication()).getComponent().fileDownloader();
-
-        mRootView = (CoordinatorLayout) findViewById(R.id.rootView);
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         mProgressBar.setVisibility(View.GONE); // hidden by default
@@ -103,6 +76,37 @@ public class MainActivity extends AppCompatActivity {
         mGridView.setAdapter(mGridViewAdapter);
         mGridView.setNumColumns(COLUMNS);
 
+        //initialize the search manager
+        mImageSearchManager = new ImageSearchManager(getApplicationContext(),
+                shutterstockClient,
+                IMAGES_PER_REQUEST,
+                new ImageSearchManager.Listener() {
+                    @Override
+                    public void onRequest() {
+                        mProgressBar.setVisibility(View.VISIBLE);
+                    }
+
+                    @Override
+                    public void onNoMoreImages() {
+                        Toast.makeText(MainActivity.this, R.string.no_more_images, Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        stopProgressAnimation();
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        stopProgressAnimation();
+                    }
+
+                    @Override
+                    public void onNextItem(ImageFile imageFile) {
+                        mGridViewAdapter.addImage(imageFile);
+                    }
+                });
+
         //detect when scrolling to the end
         mGridView.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
@@ -113,45 +117,19 @@ public class MainActivity extends AppCompatActivity {
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
                 final int loadBeforeItemsCount = IMAGES_PER_REQUEST / 2; // scrolled more than the half
                 if (firstVisibleItem + visibleItemCount >= totalItemCount - loadBeforeItemsCount) {
-                    // End has been reached
-                    getNextImages(mSearchText);
+                    mImageSearchManager.requestNextImages();
+//                    getNextImages(mSearchText);
                 }
             }
         });
 
-        //setup observable
-        mShowImagesStream.buffer(COLUMNS)
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<List<ImageFile>>() {
-                    @Override
-                    public void onCompleted() {
-                        LogHelper.logEvent("mShowImagesStream: completed");
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        LogHelper.logException(e);
-                    }
-
-                    @Override
-                    public void onNext(List<ImageFile> imageFiles) {
-                        mGridViewAdapter.addImages(imageFiles);
-                    }
-
-                });
-
-    }
-
-    private void searchImages(String searchText) {
-        //initialize vars
-        mLastRequestedPage = 1;
-        mSearchText = searchText;
-        mGridViewAdapter.clear();
-        mGridView.scrollTo(0, 0); //scroll to top
-        mReachedEnd = false;
-
-        getNextImages(searchText);
+        if (savedInstanceState != null) {
+            mImageSearchManager.restoreState(savedInstanceState);
+            ArrayList<ImageFile> imageFiles = (ArrayList<ImageFile>) savedInstanceState.getSerializable(KEY_IMAGE_FILES);
+            mGridViewAdapter.addImages(imageFiles);
+            int scrollX = savedInstanceState.getInt(KEY_SCROLL_X);
+            mGridView.scrollTo(scrollX, 0);
+        }
     }
 
     private void stopProgressAnimation() {
@@ -165,104 +143,15 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-//    private final Subscriber<ImageInfo> mImageInfoSubscriber = new Subscriber<ImageInfo>() {
-//        @Override
-//        public void onCompleted() {
-//            LogHelper.logEvent("completed");
-//            stopProgressAnimation();
-//        }
-//
-//        @Override
-//        public void onError(Throwable e) {
-//            LogHelper.logException(e);
-//            stopProgressAnimation();
-//        }
-//
-//        @Override
-//        public void onNext(ImageInfo imageInfo) {
-//            if (imageInfo.assets.preview != null) {
-//                try {
-//                    final ImageFile image =
-//                            new ImageFile(getApplicationContext(),
-//                                    imageInfo, imageInfo.assets.preview);
-//                    mShowImagesStream.onNext(image);
-//                } catch (IOException e) {
-//                    LogHelper.logException(e);
-//                }
-//            }
-//        }
-//    };
-
-    private void getNextImages(String searchText) {
-        if (mReachedEnd || mLoadingMore) {
-            return;
-        }
-
-        if (searchText == null) {
-            return;
-        }
-        mLoadingMore = true;
-        mProgressBar.setVisibility(View.VISIBLE);
-        ShutterstockClient client = ((ShutterstockApp)getApplication()).getComponent().shutterstockClient();
-        client.searchImages(mLastRequestedPage, IMAGES_PER_REQUEST, searchText).enqueue(new Callback<SearchResponse>() {
-            @Override
-            public void onResponse(Response<SearchResponse> response) {
-                SearchResponse searchResponse = response.body();
-                mReachedEnd = (searchResponse.data.size() != IMAGES_PER_REQUEST);
-                if (mReachedEnd) {
-                    Toast.makeText(getApplicationContext(), R.string.no_more_images, Toast.LENGTH_LONG).show();
-                }
-
-                //process the response with RxJava
-                Observable<ImageInfo> imageInfoObservable = Observable.from(searchResponse.data);
-                imageInfoObservable.onBackpressureDrop()
-                        .retry()
-                        .subscribeOn(Schedulers.computation())
-                        .observeOn(Schedulers.computation())
-                        .subscribe(new Subscriber<ImageInfo>() {
-                            @Override
-                            public void onCompleted() {
-                                LogHelper.logEvent("completed");
-                                stopProgressAnimation();
-                            }
-
-                            @Override
-                            public void onError(Throwable e) {
-                                LogHelper.logException(e);
-                                stopProgressAnimation();
-                            }
-
-                            @Override
-                            public void onNext(ImageInfo imageInfo) {
-                                if (imageInfo.assets.preview != null) {
-                                    try {
-                                        final ImageFile image =
-                                                new ImageFile(getApplicationContext(),
-                                                        imageInfo, imageInfo.assets.preview);
-                                        mShowImagesStream.onNext(image);
-                                    } catch (IOException e) {
-                                        LogHelper.logException(e);
-                                    }
-                                }
-                            }
-                        });
-
-                mLoadingMore = false;
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                Toast.makeText(MainActivity.this, R.string.error_connection, Toast.LENGTH_LONG).show();
-                stopProgressAnimation();
-            }
-        });
-
-        mLastRequestedPage++;
-    }
     @Override
-    protected void onPause() {
-        super.onPause();
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mImageSearchManager.saveState(outState);
+        ArrayList<ImageFile> imageFiles = mGridViewAdapter.getImages();
+        outState.putSerializable(KEY_IMAGE_FILES, imageFiles);
+        outState.putInt(KEY_SCROLL_X, mGridView.getScrollX());
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -276,7 +165,9 @@ public class MainActivity extends AppCompatActivity {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                searchImages(query);
+                mGridViewAdapter.clear();
+                mGridView.scrollTo(0, 0); //scroll to top
+                mImageSearchManager.searchImages(query);
                 ActionBar actionBar = getSupportActionBar();
                 if (actionBar != null) {
                     actionBar.setTitle(query);

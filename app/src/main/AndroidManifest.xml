@@ -25,7 +25,6 @@
         </activity>
         <activity
             android:name=".activity.FullscreenImageActivity"
-            android:configChanges="keyboardHidden|screenLayout|screenSize"
             android:label="@string/title_activity_fullscreen_image"
             android:parentActivityName=".activity.MainActivity">
             <meta-data

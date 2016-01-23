@@ -28,6 +28,7 @@ import com.javierruiz.shutterstocktestapp.util.LogHelper;
  * Created by Javier on 19.01.2016.
  */
 public class ImageAdapter extends BaseAdapter {
+
     private ArrayList<ImageFile> mImages = new ArrayList<>();
     private FileDownloader mFileDownloader;
     private Listener mListener;
@@ -159,6 +160,9 @@ public class ImageAdapter extends BaseAdapter {
         }
     }
 
+    public ArrayList<ImageFile> getImages() {
+        return mImages;
+    }
 
     private static class GridItemViewHolder {
         private int itemPosition;
