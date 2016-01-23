@@ -6,7 +6,7 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "shutterstock.test.com.shutterstockapp"
+        applicationId "com.javierruiz.shutterstockapp"
         minSdkVersion 16
         targetSdkVersion 23
         versionCode 1
@@ -17,6 +17,9 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    dataBinding {
+        enabled = true
     }
 }
 
@@ -44,5 +47,8 @@ dependencies {
     // RxAndroid and RxJava
     compile 'io.reactivex:rxandroid:1.1.0'
     compile 'io.reactivex:rxjava:1.0.14'
+
+    // Material progress wheel
+    compile 'com.pnikosis:materialish-progress:1.7'
 
 }

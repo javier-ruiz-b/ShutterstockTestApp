@@ -2,8 +2,12 @@
     <string name="app_name">ShutterstockApp</string>
     <string name="action_settings">Settings</string>
 
-    <string name="no_more_images">No more images!</string>
-
+    <!--Main Activity-->
     <string name="search_title">Search</string>
     <string name="search_hint">Image to search…</string>
+
+    <!--Toasts-->
+    <string name="no_more_images">No more images!</string>
+    <string name="error_connection">Connection failed!</string>
+
 </resources>

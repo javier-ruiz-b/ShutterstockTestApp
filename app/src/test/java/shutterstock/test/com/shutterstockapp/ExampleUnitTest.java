@@ -1,4 +1,4 @@
-package shutterstock.test.com.shutterstockapp;
+package com.javierruiz.shutterstocktestapp;
 
 import org.junit.Test;
 
