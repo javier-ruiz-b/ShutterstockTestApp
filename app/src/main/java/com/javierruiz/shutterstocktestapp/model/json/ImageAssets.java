@@ -1,6 +1,8 @@
 package com.javierruiz.shutterstocktestapp.model.json;
 
-public class ImageAssets {
+import java.io.Serializable;
+
+public class ImageAssets implements Serializable {
 
     public ImageData preview;
     public ImageData smallThumb;

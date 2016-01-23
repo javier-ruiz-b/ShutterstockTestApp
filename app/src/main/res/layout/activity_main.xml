@@ -7,12 +7,13 @@
     android:fitsSystemWindows="true"
     tools:context=".activity.MainActivity">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
         <android.support.design.widget.AppBarLayout
+            android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:theme="@style/AppTheme.AppBarOverlay">
@@ -30,10 +31,21 @@
             android:id="@+id/gridView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_below="@+id/appBarLayout"
+            android:layout_above="@+id/progressBar"
             android:verticalSpacing="2dp"
             android:horizontalSpacing="2dp"/>
 
-    </LinearLayout>
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:indeterminate="true"
+            android:indeterminateDuration="@android:integer/config_mediumAnimTime"
+            android:theme="@style/CustomProgressBar"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
+    </RelativeLayout>
 
     <!--<include layout="@layout/content_main" />-->
 

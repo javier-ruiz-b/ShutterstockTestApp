@@ -7,7 +7,9 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
+import com.javierruiz.shutterstocktestapp.model.json.ImageInfo;
 import com.pnikosis.materialishprogress.ProgressWheel;
 import com.squareup.picasso.Picasso;
 
@@ -27,11 +29,13 @@ import com.javierruiz.shutterstocktestapp.util.LogHelper;
  */
 public class ImageAdapter extends BaseAdapter {
     private ArrayList<ImageFile> mImages = new ArrayList<>();
-
     private FileDownloader mFileDownloader;
+    private Listener mListener;
 
-    public ImageAdapter(FileDownloader fileDownloader) {
+    public ImageAdapter(FileDownloader fileDownloader,
+                        Listener listener) {
         mFileDownloader = fileDownloader;
+        mListener = listener;
     }
 
     public void addImages(ImageFile[] images) {
@@ -66,47 +70,44 @@ public class ImageAdapter extends BaseAdapter {
         return position;
     }
 
-    private static class GridItemBindingHolder {
-        private int itemPosition;
-        private ImageView imageView;
-        private ProgressWheel progressWheel;
-
-        GridItemBindingHolder(View view) {
-            imageView = (ImageView) view.findViewById(R.id.imageView);
-            progressWheel = (ProgressWheel) view.findViewById(R.id.progressWheel);
-        }
-
-    }
     // create a new ImageView for each item referenced by the Adapter
     public View getView(int position, View view, ViewGroup parent) {
-        GridItemBindingHolder holder;
+        GridItemViewHolder holder;
         if (view == null) {
             view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_gridview, parent, false);
 
-            holder = new GridItemBindingHolder(view);
+            holder = new GridItemViewHolder(parent, view);
             view.setTag(holder);
         } else {
-            holder = (GridItemBindingHolder) view.getTag();
+            holder = (GridItemViewHolder) view.getTag();
         }
 
         holder.itemPosition = position;
-        ImageFile image = mImages.get(position);
-
-        //invalidate current imageView
-        holder.imageView.setImageResource(0);
+        final ImageFile image = mImages.get(position);
 
         loadImageOrDownload(parent, image, holder, position);
+
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mListener.onImageClick(image, v);
+            }
+        });
 
         return view;
     }
 
     private void loadImageOrDownload(final View parent,
                                      final ImageFile imageFile,
-                                     final GridItemBindingHolder holder,
+                                     final GridItemViewHolder holder,
                                      final int itemPosition) {
 
-        if (imageFile.getFile().exists()) { // no problem
+
+        //invalidate current imageView
+        holder.imageView.setImageResource(0);
+
+        if (imageFile.getFile().exists()) { // cache hit
             loadImage(parent, imageFile, holder, itemPosition);
         } else {
             holder.progressWheel.setVisibility(View.VISIBLE);
@@ -139,9 +140,8 @@ public class ImageAdapter extends BaseAdapter {
     }
     private void loadImage(View parent,
                            ImageFile imageFile,
-                           GridItemBindingHolder holder,
+                           GridItemViewHolder holder,
                            int itemPosition) {
-        int gridItemSize = ((GridView) parent).getColumnWidth();
         Context context = parent.getContext();
 
         if (holder.itemPosition == itemPosition) { //check that view hasn't been recycled
@@ -150,18 +150,31 @@ public class ImageAdapter extends BaseAdapter {
             if (file.exists()) {
                 Picasso.with(context)
                         .load(file)
-                        .resize(gridItemSize, gridItemSize)
-                        .centerCrop()
                         .into(holder.imageView);
             } else { //show error pic
                 Picasso.with(context)
                         .load(R.drawable.ic_error_outline_black_48dp)
-                        .resize(gridItemSize, gridItemSize)
-                        .centerCrop()
                         .into(holder.imageView);
             }
         }
     }
 
 
+    private static class GridItemViewHolder {
+        private int itemPosition;
+        private ImageView imageView;
+        private ProgressWheel progressWheel;
+
+        GridItemViewHolder(View parent, View view) {
+            imageView = (ImageView) view.findViewById(R.id.imageView);
+            //set fixed size
+            int gridItemSize = ((GridView) parent).getColumnWidth();
+            view.setLayoutParams(new RelativeLayout.LayoutParams(gridItemSize, gridItemSize));
+            progressWheel = (ProgressWheel) view.findViewById(R.id.progressWheel);
+        }
+    }
+
+    public interface Listener {
+        void onImageClick(ImageFile image, View gridViewItem);
+    }
 }

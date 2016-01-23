@@ -1,6 +1,8 @@
 package com.javierruiz.shutterstocktestapp.model.json;
 
-public class ImageContributor {
+import java.io.Serializable;
+
+public class ImageContributor implements Serializable {
 
     public String id;
 

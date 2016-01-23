@@ -1,9 +1,10 @@
 package com.javierruiz.shutterstocktestapp.model.json;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SearchResponse {
+public class SearchResponse implements Serializable {
 
     public Integer page;
     public Integer perPage;

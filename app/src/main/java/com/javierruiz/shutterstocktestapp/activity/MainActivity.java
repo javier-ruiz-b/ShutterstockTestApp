@@ -1,14 +1,22 @@
 package com.javierruiz.shutterstocktestapp.activity;
 
+import android.app.ActivityOptions;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.AbsListView;
 import android.widget.GridView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -43,7 +51,9 @@ public class MainActivity extends AppCompatActivity {
     private String mSearchText;
     private boolean mLoadingMore;
 
+    //Views
     private GridView mGridView;
+    private ProgressBar mProgressBar;
     private ImageAdapter mGridViewAdapter;
 
     private PublishSubject<ImageFile> mShowImagesStream = PublishSubject.create();
@@ -58,8 +68,30 @@ public class MainActivity extends AppCompatActivity {
 
         FileDownloader fileDownloader = ((ShutterstockApp)getApplication()).getComponent().fileDownloader();
 
+        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+        mProgressBar.setVisibility(View.GONE); // hidden by default
+
+        ImageAdapter.Listener imageAdapterListener = new ImageAdapter.Listener() {
+            @Override
+            public void onImageClick(ImageFile image, View gridViewItem) {
+                if (!image.getFile().exists()) {
+                    return; // do not load if not ready
+                }
+
+
+                Intent intent = new Intent(MainActivity.this, FullscreenImageActivity.class);
+                intent.putExtra(FullscreenImageActivity.KEY_PARAMETER_IMAGE_FILE, image);
+
+                ActivityOptionsCompat options = ActivityOptionsCompat
+                        .makeSceneTransitionAnimation(MainActivity.this, gridViewItem,
+                                FullscreenImageActivity.KEY_COMMON_TRANSITION_VIEW);
+
+                startActivity(intent, options.toBundle());
+            }
+        };
+
         mGridView = (GridView) findViewById(R.id.gridView);
-        mGridViewAdapter = new ImageAdapter(fileDownloader);
+        mGridViewAdapter = new ImageAdapter(fileDownloader, imageAdapterListener);
         mGridView.setAdapter(mGridViewAdapter);
         mGridView.setNumColumns(COLUMNS);
 
@@ -71,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                final int loadBeforeItemsCount = ROWS_PER_REQUEST * 2 / 3;
+                final int loadBeforeItemsCount = IMAGES_PER_REQUEST  / 2; // scrolled more than the half
                 if (firstVisibleItem + visibleItemCount >= totalItemCount - loadBeforeItemsCount) {
                     // End has been reached
                     getNextImages(mSearchText);
@@ -110,10 +142,47 @@ public class MainActivity extends AppCompatActivity {
         mGridView.scrollTo(0, 0); //scroll to top
         mReachedEnd = false;
 
-        // TODO: cancel last observables
-
         getNextImages(searchText);
     }
+
+    private void stopProgressAnimation() {
+        //has to be executed on main thread
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                mProgressBar.setVisibility(View.GONE);
+            }
+        });
+    }
+
+//    private final Subscriber<ImageInfo> mImageInfoSubscriber = new Subscriber<ImageInfo>() {
+//        @Override
+//        public void onCompleted() {
+//            LogHelper.logEvent("completed");
+//            stopProgressAnimation();
+//        }
+//
+//        @Override
+//        public void onError(Throwable e) {
+//            LogHelper.logException(e);
+//            stopProgressAnimation();
+//        }
+//
+//        @Override
+//        public void onNext(ImageInfo imageInfo) {
+//            if (imageInfo.assets.preview != null) {
+//                try {
+//                    final ImageFile image =
+//                            new ImageFile(getApplicationContext(),
+//                                    imageInfo, imageInfo.assets.preview);
+//                    mShowImagesStream.onNext(image);
+//                } catch (IOException e) {
+//                    LogHelper.logException(e);
+//                }
+//            }
+//        }
+//    };
 
     private void getNextImages(String searchText) {
         if (mReachedEnd || mLoadingMore) {
@@ -124,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         mLoadingMore = true;
+        mProgressBar.setVisibility(View.VISIBLE);
         ShutterstockClient client = ((ShutterstockApp)getApplication()).getComponent().shutterstockClient();
         client.searchImages(mLastRequestedPage, IMAGES_PER_REQUEST, searchText).enqueue(new Callback<SearchResponse>() {
             @Override
@@ -133,8 +203,10 @@ public class MainActivity extends AppCompatActivity {
                 if (mReachedEnd) {
                     Toast.makeText(getApplicationContext(), R.string.no_more_images, Toast.LENGTH_LONG).show();
                 }
-                Observable<ImageInfo> datumObservable = Observable.from(searchResponse.data);
-                datumObservable.onBackpressureDrop()
+
+                //process the response with RxJava
+                Observable<ImageInfo> imageInfoObservable = Observable.from(searchResponse.data);
+                imageInfoObservable.onBackpressureDrop()
                         .retry()
                         .subscribeOn(Schedulers.computation())
                         .observeOn(Schedulers.computation())
@@ -142,11 +214,13 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onCompleted() {
                                 LogHelper.logEvent("completed");
+                                stopProgressAnimation();
                             }
 
                             @Override
                             public void onError(Throwable e) {
                                 LogHelper.logException(e);
+                                stopProgressAnimation();
                             }
 
                             @Override
@@ -169,40 +243,13 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Throwable t) {
-
+                Toast.makeText(MainActivity.this, R.string.error_connection, Toast.LENGTH_LONG).show();
+                stopProgressAnimation();
             }
         });
 
         mLastRequestedPage++;
     }
-//
-//    private void downloadImageIfNecessaryAndAdd(final ImageFile imageFile) {
-//        if (imageFile.getFile().exists()) {
-//            //great, no need to download
-//            mShowImagesStream.onNext(imageFile);
-//        } else {
-////            LogHelper.logEvent("Downloading " + imageFile.getFile().getName());
-//            //download
-//            FileDownloader fileDownloader = ((ShutterstockApp)getApplication()).getComponent().fileDownloader();
-//            fileDownloader.downloadFile(imageFile.getUrl(), imageFile.getFile(),
-//                    new FileDownloader.Listener() {
-//                        @Override
-//                        public void progressUpdate(long transferred, long total) {
-//                        }
-//
-//                        @Override
-//                        public void onError(IOException e) {
-//                            LogHelper.logException(e);
-//                        }
-//
-//                        @Override
-//                        public void onSuccess() {
-//                            mShowImagesStream.onNext(imageFile);
-//                        }
-//                    });
-//        }
-//    }
-
     @Override
     protected void onPause() {
         super.onPause();
@@ -213,18 +260,20 @@ public class MainActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
-//        SearchManager searchManager = (SearchManager)
-//                getSystemService(Context.SEARCH_SERVICE);
-        MenuItem searchItem = menu.findItem(R.id.action_search);
-        SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+        final MenuItem searchItem = menu.findItem(R.id.action_search);
+        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
 
-//        searchView.setSearchableInfo(searchManager.
-//                getSearchableInfo(getComponentName()));
         searchView.setSubmitButtonEnabled(true);
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 searchImages(query);
+                ActionBar actionBar = getSupportActionBar();
+                if (actionBar != null) {
+                    actionBar.setTitle(query);
+                }
+                //Exit search mode
+                MenuItemCompat.collapseActionView(searchItem);
                 return true;
             }
 
@@ -241,11 +290,6 @@ public class MainActivity extends AppCompatActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
 
         return super.onOptionsItemSelected(item);
     }

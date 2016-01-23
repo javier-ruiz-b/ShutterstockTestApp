@@ -1,6 +1,8 @@
 package com.javierruiz.shutterstocktestapp.model.json;
 
-public class ImageInfo {
+import java.io.Serializable;
+
+public class ImageInfo implements Serializable {
 
     public String id;
     public Double aspect;

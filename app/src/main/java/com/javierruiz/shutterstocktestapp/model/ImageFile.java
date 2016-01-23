@@ -4,6 +4,7 @@ import android.content.Context;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URL;
 
 import com.javierruiz.shutterstocktestapp.model.json.ImageInfo;
@@ -13,7 +14,7 @@ import com.javierruiz.shutterstocktestapp.util.IOUtils;
 /**
  * Created by Javier on 19.01.2016.
  */
-public class ImageFile {
+public class ImageFile implements Serializable {
 
     private final static String IMAGE_FILE_SUFFIX = ".jpg";
 

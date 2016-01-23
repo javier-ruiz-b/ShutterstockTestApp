@@ -10,4 +10,8 @@
     <string name="no_more_images">No more images!</string>
     <string name="error_connection">Connection failed!</string>
 
+    <string name="title_activity_fullscreen_image">FullscreenImageActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+
 </resources>
