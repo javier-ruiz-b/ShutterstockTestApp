@@ -1,6 +1,5 @@
 package com.javierruiz.shutterstocktestapp;
 
-import android.app.Application;
 import android.test.ApplicationTestCase;
 
 import org.junit.Before;

@@ -25,6 +25,8 @@ import com.javierruiz.shutterstocktestapp.module.network.file.FileDownloader;
 import com.javierruiz.shutterstocktestapp.util.LogHelper;
 
 /**
+ * Adapter for the GridView
+ *
  * Created by Javier on 19.01.2016.
  */
 public class ImageAdapter extends BaseAdapter {

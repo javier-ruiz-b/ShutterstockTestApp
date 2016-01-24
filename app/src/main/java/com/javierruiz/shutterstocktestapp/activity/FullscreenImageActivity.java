@@ -36,7 +36,7 @@ public class FullscreenImageActivity extends AppCompatActivity {
      */
     private static final int UI_ANIMATION_DELAY = 300;
     private final Handler mHideHandler = new Handler();
-//    private View mContentView;
+
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
         @Override
@@ -56,7 +56,7 @@ public class FullscreenImageActivity extends AppCompatActivity {
             mTextView.setVisibility(View.GONE);
         }
     };
-//    private View mControlsView;
+
     private final Runnable mShowPart2Runnable = new Runnable() {
         @Override
         public void run() {
@@ -109,7 +109,7 @@ public class FullscreenImageActivity extends AppCompatActivity {
 
         //Load Image
         if (getIntent() == null) {
-            finish(); // uh, something went wrong
+            finish(); // uh, I expected something...
             return;
         }
         ImageFile imageFile = (ImageFile) getIntent().getSerializableExtra(KEY_PARAMETER_IMAGE_FILE);

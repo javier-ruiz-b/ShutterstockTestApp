@@ -33,6 +33,7 @@ public class ImageFile implements Serializable {
                      Integer height,
                      String url) throws IOException {
         mImageInfo = imageInfo;
+        //build cache file
         String name = mImageInfo.id + "_" + width.toString() + "x" + height.toString() + IMAGE_FILE_SUFFIX;
         File imagesFolder = IOUtils.getImagesTempDir(context);
         mFile = new File(imagesFolder, name);

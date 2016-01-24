@@ -33,14 +33,6 @@ public class FileDownloader {
         mClient = new OkHttpClient();
     }
 
-//    private static FileDownloader mInstance = null;
-//    public static FileDownloader getInstance() {
-//        if (mInstance == null) {
-//            mInstance = new FileDownloader();
-//        }
-//        return mInstance;
-//    }
-
     public Call downloadFile(URL url,
                              final File outFile,
                              @Nullable final Listener listener) {

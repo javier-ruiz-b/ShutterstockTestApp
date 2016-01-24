@@ -10,6 +10,8 @@ import com.javierruiz.shutterstocktestapp.module.network.shutterstock.Shuttersto
 import com.javierruiz.shutterstocktestapp.module.network.shutterstock.ShutterstockClientModule;
 
 /**
+ * Dagger 2 modules
+ *
  * Created by Javier on 22.01.2016.
  */
 @Singleton

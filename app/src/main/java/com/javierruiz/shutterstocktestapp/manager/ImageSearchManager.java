@@ -20,6 +20,8 @@ import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 /**
+ * Controls the image search logic.
+ *
  * Created by Javier on 23.01.2016.
  */
 public class ImageSearchManager {
