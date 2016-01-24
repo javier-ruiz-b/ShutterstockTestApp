@@ -54,13 +54,13 @@ public class ImageSearchManager {
                 .subscribe(new Subscriber<ImageFile>() {
                     @Override
                     public void onCompleted() {
-                        LogHelper.logEvent("mShowImagesStream: completed");
+//                        LogHelper.logEvent("mShowImagesStream: completed");
                     }
 
                     @Override
                     public void onError(Throwable e) {
                         LogHelper.logException(e);
-                        mListener.onFailure(e);
+//                        mListener.onFailure(e); //spam
                     }
 
                     @Override
@@ -117,7 +117,7 @@ public class ImageSearchManager {
                                 .subscribe(new Subscriber<ImageInfo>() {
                                     @Override
                                     public void onCompleted() {
-                                        LogHelper.logEvent("completed");
+//                                        LogHelper.logEvent("completed");
                                         mLastRequestedPage++;
                                         mListener.onComplete();
                                     }

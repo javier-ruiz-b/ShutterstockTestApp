@@ -99,6 +99,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Throwable t) {
                         stopProgressAnimation();
+                        Toast.makeText(MainActivity.this, getString(R.string.error_connection),
+                                Toast.LENGTH_SHORT).show();
                     }
 
                     @Override

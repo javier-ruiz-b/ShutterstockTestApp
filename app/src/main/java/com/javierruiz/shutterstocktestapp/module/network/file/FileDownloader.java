@@ -12,6 +12,7 @@ import java.net.URL;
 
 import javax.inject.Singleton;
 
+import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -40,7 +41,7 @@ public class FileDownloader {
 //        return mInstance;
 //    }
 
-    public void downloadFile(URL url,
+    public Call downloadFile(URL url,
                              final File outFile,
                              @Nullable final Listener listener) {
         final Request request = new Request.Builder()
@@ -51,7 +52,8 @@ public class FileDownloader {
         final Handler sameThreadHandler = new Handler();
 
         //enqueue download task
-        mClient.newCall(request).enqueue(new Callback() {
+        Call call = mClient.newCall(request);
+        call.enqueue(new Callback() {
             @Override
             public void onFailure(Request request,
                                   final IOException e) {
@@ -115,6 +117,7 @@ public class FileDownloader {
                 }
             }
         });
+        return call;
     }
 
 
